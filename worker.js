@@ -21,12 +21,11 @@ fileQueue.process(async (job, done) => {
 
   if (!userId) done(new Error('Missing userId'));
   if (!fileId) done(new Error('Missing fileId'));
-  console.log(userId, fileId);
 
   const docs = await dbClient.db
     .collection('files')
     .findOne({ _id: ObjectId(fileId), userId });
-  console.log(docs);
+
   if (docs === null) done(new Error('File not found'));
 
   const SIZE_100 = await createThumbnails(100, docs.localPath);
