@@ -11,6 +11,13 @@ const fileQueue = new Queue('fileQueue', {
   },
 });
 
+const userQueue = new Queue('userQueue', {
+  redis: {
+    host: '127.0.0.1',
+    port: 6379,
+  },
+});
+
 const createThumbnails = async (width, path) => {
   const thumbnail = await imageThumbnail(path, width);
   return thumbnail;
@@ -26,7 +33,7 @@ fileQueue.process(async (job, done) => {
     .collection('files')
     .findOne({ _id: ObjectId(fileId), userId });
 
-  if (docs === null) done(new Error('File not found'));
+  if (docs === null) done(Error('File not found'));
 
   const SIZE_100 = await createThumbnails(100, docs.localPath);
   const SIZE_250 = await createThumbnails(250, docs.localPath);
@@ -35,4 +42,18 @@ fileQueue.process(async (job, done) => {
   await fs.promises.writeFile(`${docs.localPath}_100`, SIZE_100);
   await fs.promises.writeFile(`${docs.localPath}_250`, SIZE_250);
   await fs.promises.writeFile(`${docs.localPath}_500`, SIZE_500);
+});
+
+userQueue.process(async (job, done) => {
+  const { userId } = job.data || null;
+  const user = await dbClient.db
+    .collection('user')
+    .findOne({ _id: ObjectId(userId) });
+
+  if (!userId) done(new Error('Missing userId'));
+
+  const docs = await dbClient.db.collection('files').findOne({ userId });
+
+  if (!docs) done(Error('User not found'));
+  console.log(`Welcome ${user.email}!`);
 });
