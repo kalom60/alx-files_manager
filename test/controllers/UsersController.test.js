@@ -9,31 +9,30 @@ import request from 'request';
 import dbClient from '../../utils/db';
 
 const url = 'http://0.0.0.0:5000';
+let token = '';
 
 const user = {
   email: 'test@test.com',
   password: 'password',
 };
 
-// const connect = () => {
-//   const basic = Buffer.from(`${user.email}:${user.password}`).toString(
-//     'base64'
-//   );
-//   const auth = `Basic ${basic}`;
-
-//   request.get(
-//     `${url}/connect`,
-//     {
-//       headers: {
-//         Authorization: auth,
-//       },
-//     },
-//     (error, response, body) => {
-//       const tokenId = JSON.parse(body).token;
-//       return tokenId;
-//     }
-//   );
-// };
+function connect() {
+  const basic = Buffer.from(`${user.email}:${user.password}`).toString(
+    'base64'
+  );
+  const auth = `Basic ${basic}`;
+  const option = {
+    method: 'GET',
+    url: `${url}/connect`,
+    headers: {
+      Authorization: auth,
+    },
+  };
+  request(option, (err, res, data) => {
+    token = JSON.parse(data);
+    done();
+  });
+}
 
 describe('POST: /users', () => {
   before((done) => {
@@ -94,10 +93,18 @@ describe('POST: /users', () => {
 });
 
 describe('GET: /users/me', () => {
-  //   after((done) => {
-  //     request.get(`${url}/disconnect`, { headers: { token: connect() } });
-  //     done();
-  //   });
+  after((done) => {
+    const option = {
+      method: 'GET',
+      url: `${url}/disconnect`,
+      headers: {
+        'X-Token': token,
+      },
+    };
+    request(option, (err) => {
+      done();
+    });
+  });
 
   it('without a token', (done) => {
     request.get(`${url}/users/me`, (err, res, data) => {
@@ -107,20 +114,19 @@ describe('GET: /users/me', () => {
     });
   });
 
-  //   it('with a token', (done) => {
-  //     request.get(
-  //       `${url}/users/me`,
-  //       {
-  //         headers: {
-  //           'X-Token': 'connect()',
-  //         },
-  //       },
-  //       (err, res, data) => {
-  //         expect(res.statusCode).to.equal(200);
-  //         expect(data.email).to.equal(user.email);
-  //         expect(data.id.length).to.be.greaterThan(0);
-  //         done();
-  //       }
-  //     );
-  //   });
+  it('with a token', (done) => {
+    connect();
+    const option = {
+      method: 'GET',
+      url: `${url}/users/me`,
+      headers: {
+        'X-Token': token,
+      },
+    };
+    request(option, (err, res, data) => {
+      expect(res.statusCode).to.equal(200);
+      expect(JSON.parse(data).email).to.equal(user.email);
+      done();
+    });
+  });
 });
