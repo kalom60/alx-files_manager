@@ -46,11 +46,11 @@ fileQueue.process(async (job, done) => {
 
 userQueue.process(async (job, done) => {
   const { userId } = job.data || null;
-  const user = await dbClient.db
-    .collection('user')
-    .findOne({ _id: ObjectId(userId) });
-
   if (!userId) done(new Error('Missing userId'));
+
+  const user = await dbClient.db
+    .collection('users')
+    .findOne({ _id: ObjectId(userId) });
 
   const docs = await dbClient.db.collection('files').findOne({ userId });
 
