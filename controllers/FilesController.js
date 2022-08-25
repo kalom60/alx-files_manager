@@ -129,13 +129,14 @@ class FilesController {
     const docs = data.map((doc) => {
       const newData = {
         ...doc,
-        id: doc._d,
+        id: doc._id,
       };
       delete newData._id;
       delete newData.localPath;
       return newData;
     });
-    return res.status(200).json({ docs });
+
+    return res.status(200).json(docs);
   }
 
   static async putPublish(req, res) {
