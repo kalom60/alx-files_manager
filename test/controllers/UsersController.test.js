@@ -9,7 +9,7 @@ import request from 'request';
 import dbClient from '../../utils/db';
 
 const url = 'http://0.0.0.0:5000';
-let token = '';
+let token;
 
 const user = {
   email: 'test@test.com',
@@ -21,27 +21,35 @@ function connect() {
     'base64'
   );
   const auth = `Basic ${basic}`;
-  const option = {
+  const options = {
     method: 'GET',
     url: `${url}/connect`,
     headers: {
       Authorization: auth,
     },
   };
-  request(option, (err, res, data) => {
-    token = JSON.parse(data);
-    done();
+  request(options, (err, res, data) => {
+    token = JSON.parse(data).token;
+    console.log(token);
   });
 }
 
+function delMongo() {
+  Promise.all([
+    dbClient.db.collection('files').deleteMany({}),
+    dbClient.db.collection('users').deleteMany({}),
+  ]);
+}
+
 describe('POST: /users', () => {
-  before((done) => {
-    Promise.all([
-      dbClient.db.collection('files').deleteMany({}),
-      dbClient.db.collection('users').deleteMany({}),
-    ])
-      .then(() => done())
-      .catch((err) => done(err));
+  before(async (done) => {
+    delMongo();
+    done();
+  });
+
+  after(async (done) => {
+    connect();
+    done();
   });
 
   it('without an email', (done) => {
@@ -93,29 +101,20 @@ describe('POST: /users', () => {
 });
 
 describe('GET: /users/me', () => {
-  after((done) => {
-    const option = {
-      method: 'GET',
-      url: `${url}/disconnect`,
-      headers: {
-        'X-Token': token,
-      },
-    };
-    request(option, (err) => {
-      done();
-    });
-  });
+  // before(async (done) => {
+  //   connect();
+  //   done();
+  // });
 
   it('without a token', (done) => {
-    request.get(`${url}/users/me`, (err, res, data) => {
+    request.get(`${url}/users/me`, (err, res, body) => {
       expect(res.statusCode).to.equal(401);
-      expect(JSON.parse(data)).to.deep.equal({ error: 'Unauthorized' });
+      expect(JSON.parse(body)).to.deep.equal({ error: 'Unauthorized' });
       done();
     });
   });
 
   it('with a token', (done) => {
-    connect();
     const option = {
       method: 'GET',
       url: `${url}/users/me`,
@@ -123,9 +122,9 @@ describe('GET: /users/me', () => {
         'X-Token': token,
       },
     };
-    request(option, (err, res, data) => {
+    request(option, (err, res, body) => {
       expect(res.statusCode).to.equal(200);
-      expect(JSON.parse(data).email).to.equal(user.email);
+      expect(JSON.parse(body).email).to.equal(user.email);
       done();
     });
   });
