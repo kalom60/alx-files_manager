@@ -150,7 +150,7 @@ class FilesController {
       .collection('files')
       .findOne({ _id: ObjectId(id), userId: user._id.toString });
 
-    if (!docs) return res.status(404).json('Not found');
+    if (!docs) return res.status(404).json({ error: 'Not found' });
 
     if (docs.isPublic === false) {
       await dbClient.db
@@ -177,7 +177,7 @@ class FilesController {
       .collection('files')
       .findOne({ _id: ObjectId(id), userId: user._id.toString });
 
-    if (!docs) return res.status(404).json('Not found');
+    if (!docs) return res.status(404).json({ error: 'Not found' });
 
     if (docs.isPublic === true) {
       await dbClient.db
