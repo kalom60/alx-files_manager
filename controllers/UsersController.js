@@ -30,7 +30,7 @@ class UsersController {
       const newUser = await dbClient.db
         .collection('users')
         .insertOne({ email, password: sha1(password) });
-      userQueue.add(newUser.ops[0]._id);
+      userQueue.add({ userId: newUser.ops[0]._id });
       return res
         .status(201)
         .json({ id: newUser.ops[0]._id, email: newUser.ops[0].email });
