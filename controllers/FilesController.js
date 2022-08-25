@@ -102,7 +102,7 @@ class FilesController {
     delete docs._id;
     delete docs.localPath;
 
-    return res.status(200).json({ docs });
+    return res.status(200).json(docs);
   }
 
   static async getIndex(req, res) {
